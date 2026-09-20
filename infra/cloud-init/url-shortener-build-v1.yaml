@@ -1,0 +1,37 @@
+disable_root: true
+ssh_pwauth: false
+
+users:
+  - name: roo
+    gecos: Administrator
+    shell: /bin/bash
+    lock_passwd: true
+    sudo:
+      - "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHSM6StAWC2LG29nG/aLntw5xYJ6JvA+4JqYxW8Lmmn6 roo-url-shortener-admin
+
+  - name: ansible
+    gecos: Ansible automation
+    shell: /bin/bash
+    lock_passwd: true
+    sudo:
+      - "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIISWg5E1HfuXOSLCqbzSwJmlZT0YKtZol4EwuYrYr1gK roo@localhost.localdomain
+
+  - name: root
+    lock_passwd: true
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/00-url-shortener.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      PermitRootLogin no
+      PubkeyAuthentication yes
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+
+runcmd:
+  - [bash, -ec, "sshd -t && systemctl reload sshd"]
