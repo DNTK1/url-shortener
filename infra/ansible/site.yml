@@ -1,0 +1,25 @@
+- name: Konfiguracja RockyLinux
+  hosts: url_shortener
+  become: true
+
+  tasks:
+    - name: Instalacja pakietow
+      ansible.builtin.dnf:
+        name:
+          - qemu-guest-agent
+          - chrony
+        state: present
+    - name: Start uslug
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - qemu-guest-agent
+        - chronyd
+    - name: Klucz SSH admin
+      ansible.posix.authorized_key:
+        user: roo
+        state: present
+        key: "{{ lookup('ansible.builtin.file', playbook_dir + '/keys/id_ed25519_url_admin.pub') }}"
+        exclusive: false
