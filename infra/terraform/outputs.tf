@@ -1,4 +1,8 @@
-output "url_shortener_ipv4_addresses" {
+output "vm_ipv4_addresses" {
   description = "Odczytane adresy IP"
-  value       = proxmox_virtual_environment_vm.vms["cp01"].ipv4_addresses
+
+  value = {
+    for vm_name, vm in proxmox_virtual_environment_vm.vms :
+    vm_name => vm.ipv4_addresses
+  }
 }
