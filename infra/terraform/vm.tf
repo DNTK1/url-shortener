@@ -7,6 +7,22 @@ resource "proxmox_virtual_environment_vm" "url_shortener_test" {
   started       = true
   on_boot       = false
 
+  cpu {
+    cores = 2
+    type  = "x86-64-v3"
+  }
+
+  memory {
+    dedicated = 2048
+    floating  = 0
+  }
+
+  network_device {
+    bridge  = "vmbr0"
+    model   = "virtio"
+    vlan_id = 90
+  }
+
   agent {
     enabled = true
 
