@@ -7,6 +7,14 @@ resource "proxmox_virtual_environment_vm" "url_shortener_test" {
   started       = true
   on_boot       = false
 
+  agent {
+    enabled = true
+
+    wait_for_ip {
+      ipv4 = true
+    }
+  }
+
   clone {
     vm_id     = 9000
     node_name = "Lab3"
