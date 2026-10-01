@@ -1,19 +1,20 @@
-resource "proxmox_virtual_environment_vm" "url_shortener_test" {
-  name          = "url-shortener-test"
-  node_name     = "Lab3"
-  vm_id         = 200
+resource "proxmox_virtual_environment_vm" "vms" {
+  for_each      = var.vms
+  name          = each.value.name
+  node_name     = each.value.node_name
+  vm_id         = each.value.vm_id
   pool_id       = "url-shortener"
   scsi_hardware = "virtio-scsi-single"
   started       = true
   on_boot       = false
 
   cpu {
-    cores = 2
+    cores = each.value.cores
     type  = "x86-64-v3"
   }
 
   memory {
-    dedicated = 2048
+    dedicated = each.value.memory
     floating  = 0
   }
 
