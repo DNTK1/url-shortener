@@ -1,0 +1,88 @@
+- name: Przygotowanie nodow dla Kubernetesa
+  hosts: url_shortener
+  become: true
+
+  tasks:
+    - name: Instalacja pakietow
+      ansible.builtin.package:
+        name:
+          - curl
+          - tar
+          - chrony
+          - conntrack-tools
+          - socat
+          - container-selinux
+        state: present
+
+    - name: Aktualizacja
+      ansible.builtin.package:
+        name:
+          - kernel
+          - kernel-modules-extra
+        state: latest
+      register: kernel_packages
+
+    - name: Restart
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: kernel_packages.changed
+
+    - name: Wlaczenie synchronizacji czasu
+      ansible.builtin.systemd_service:
+        name: chronyd
+        enabled: true
+        state: started
+
+    - name: Wylaczenie aktywnego swapu
+      ansible.builtin.command: swapoff -a
+      when: ansible_facts.swaptotal_mb | int > 0
+      changed_when: true
+
+    - name: Usuniecie swapu z fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^[^#].*\sswap\s'
+        state: absent
+
+    - name: Ustawienie SELinux
+      ansible.builtin.lineinfile:
+        path: /etc/selinux/config
+        regexp: '^SELINUX='
+        line: SELINUX=permissive
+
+    - name: Ustawienie SELinux
+      ansible.builtin.command: setenforce 0
+      when: ansible_facts.selinux.status == 'enabled' and ansible_facts.selinux.mode == 'enforcing'
+      changed_when: true
+
+    - name: Moduly ladowane przy starcie
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/kubernetes.conf
+        mode: '0644'
+        content: |
+          overlay
+          br_netfilter
+          vxlan
+
+    - name: Zaladowanie modulow
+      ansible.builtin.command: "modprobe {{ item }}"
+      loop:
+        - overlay
+        - br_netfilter
+        - vxlan
+      changed_when: false
+
+    - name: Konfiguracja sieci dla Kubernetesa
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/90-kubernetes.conf
+        mode: '0644'
+        content: |
+          net.ipv4.ip_forward=1
+          net.bridge.bridge-nf-call-iptables=1
+          net.bridge.bridge-nf-call-ip6tables=1
+      register: network_config
+
+    - name: Zastosowanie ustawien sieci
+      ansible.builtin.command: sysctl --system
+      when: network_config.changed
+      changed_when: true

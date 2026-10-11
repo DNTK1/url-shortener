@@ -18,6 +18,15 @@ resource "proxmox_virtual_environment_vm" "vms" {
     floating  = 0
   }
 
+  disk {
+    datastore_id = "RBD-POOL"
+    interface    = "scsi0"
+    size         = each.value.disk
+    file_format  = "raw"
+    discard      = "on"
+    iothread     = true
+  }
+
   network_device {
     bridge  = "vmbr0"
     model   = "virtio"
@@ -44,7 +53,8 @@ resource "proxmox_virtual_environment_vm" "vms" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = each.value.ip
+        gateway = "10.90.0.1"
       }
     }
 
@@ -58,5 +68,8 @@ resource "proxmox_virtual_environment_vm" "vms" {
       keys     = [trimspace(file("${path.module}/keys/AnsibleVM.pub"))]
     }
   }
-}
 
+  lifecycle {
+    prevent_destroy = true
+  }
+}

@@ -1,0 +1,64 @@
+- name: Pakiety sieciowe
+  hosts: url_shortener
+  become: true
+
+  tasks:
+    - name: Instalacja nftables
+      ansible.builtin.dnf:
+        name: nftables
+        state: present
+
+- name: Instalacja Calico
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  tasks:
+    - name: Instalacja operatora
+      ansible.builtin.command: "kubectl apply --server-side -f {{ item }}"
+      loop:
+        - https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/v3_projectcalico_org.yaml
+        - https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/tigera-operator.yaml
+
+    - name: Oczekiwanie na CRD
+      ansible.builtin.command: kubectl wait --for=condition=Established crd/installations.operator.tigera.io --timeout=120s
+      changed_when: false
+
+    - name: Konfiguracja
+      ansible.builtin.copy:
+        dest: /root/calico.yml
+        mode: '0644'
+        content: |
+          apiVersion: operator.tigera.io/v1
+          kind: Installation
+          metadata:
+            name: default
+          spec:
+            calicoNetwork:
+              linuxDataplane: Nftables
+              bgp: Disabled
+              mtu: 1450
+              nodeAddressAutodetectionV4:
+                cidrs:
+                  - 10.90.0.0/24
+              ipPools:
+                - name: default-ipv4-ippool
+                  blockSize: 26
+                  cidr: 10.244.0.0/16
+                  encapsulation: VXLAN
+                  natOutgoing: Enabled
+                  nodeSelector: all()
+          ---
+          apiVersion: operator.tigera.io/v1
+          kind: APIServer
+          metadata:
+            name: default
+          spec: {}
+
+    - name: Zastosowanie konfiguracji
+      ansible.builtin.command: kubectl apply -f /root/calico.yml
+
+    - name: Oczekiwanie na nody
+      ansible.builtin.command: kubectl wait --for=condition=Ready nodes --all --timeout=600s
+      changed_when: false
