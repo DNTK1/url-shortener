@@ -32,7 +32,6 @@ __pycache__/
 *.log
 *.bak
 *.backup
-/infra/ansible/inventory.ini
 /infra/ansible/inventory.ini.tmp
 
 # Editors and OS
