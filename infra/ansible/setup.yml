@@ -1,0 +1,11 @@
+- import_playbook: site.yml
+- import_playbook: prepare-nodes.yml
+- import_playbook: containerd.yml
+- import_playbook: kubernetes.yml
+- import_playbook: network.yml
+- import_playbook: cluster.yml
+- import_playbook: calico.yml
+- import_playbook: storage.yml
+- import_playbook: postgres.yml
+- import_playbook: argocd.yml
+- import_playbook: gitops.yml

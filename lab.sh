@@ -20,7 +20,7 @@ configure_vm() {
 
   ansible-playbook \
     -i infra/ansible/inventory.ini \
-    infra/ansible/site.yml \
+    infra/ansible/setup.yml \
     --private-key "$ANSIBLE_SSH_KEY" \
     --ssh-common-args='-o IdentitiesOnly=yes'
 }
