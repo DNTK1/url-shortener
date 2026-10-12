@@ -1,9 +1,10 @@
 import secrets
+from pathlib import Path
 from contextlib import asynccontextmanager
 
 import psycopg
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, HttpUrl
 
 
@@ -26,7 +27,7 @@ class LinkCreate(BaseModel):
 
 @app.get("/")
 def home():
-    return {"message": "URL shortener działa"}
+    return FileResponse(Path(__file__).with_name("index.html"))
 
 
 @app.get("/health")
