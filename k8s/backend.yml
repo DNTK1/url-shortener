@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/dntk1/url-shortener-backend:d1eae17e3481d9e3fdc36a36d85be5f6da466562
+          image: ghcr.io/dntk1/url-shortener-backend:48144bb4d00c1c9e3e043796f7446f27c7e6211f
           ports:
             - containerPort: 8000
           env:
