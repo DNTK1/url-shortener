@@ -15,8 +15,15 @@
     KUBECONFIG: /etc/kubernetes/admin.conf
 
   tasks:
+    - name: Operator
+      ansible.builtin.command: kubectl get deployment tigera-operator -n tigera-operator
+      register: calico_operator
+      changed_when: false
+      failed_when: false
+      
     - name: Instalacja operatora
       ansible.builtin.command: "kubectl apply --server-side -f {{ item }}"
+      when: calico_operator.rc != 0
       loop:
         - https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/v3_projectcalico_org.yaml
         - https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/tigera-operator.yaml
