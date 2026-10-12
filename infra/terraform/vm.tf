@@ -1,0 +1,75 @@
+resource "proxmox_virtual_environment_vm" "vms" {
+  for_each      = var.vms
+  name          = each.value.name
+  node_name     = each.value.node_name
+  vm_id         = each.value.vm_id
+  pool_id       = "url-shortener"
+  scsi_hardware = "virtio-scsi-single"
+  started       = true
+  on_boot       = false
+
+  cpu {
+    cores = each.value.cores
+    type  = "x86-64-v3"
+  }
+
+  memory {
+    dedicated = each.value.memory
+    floating  = 0
+  }
+
+  disk {
+    datastore_id = "RBD-POOL"
+    interface    = "scsi0"
+    size         = each.value.disk
+    file_format  = "raw"
+    discard      = "on"
+    iothread     = true
+  }
+
+  network_device {
+    bridge  = "vmbr0"
+    model   = "virtio"
+    vlan_id = 90
+  }
+
+  agent {
+    enabled = true
+
+    wait_for_ip {
+      ipv4 = true
+    }
+  }
+
+  clone {
+    vm_id     = 9000
+    node_name = "Lab3"
+    full      = true
+  }
+
+  initialization {
+    datastore_id = "RBD-POOL"
+    interface    = "ide2"
+
+    ip_config {
+      ipv4 {
+        address = each.value.ip
+        gateway = "10.90.0.1"
+      }
+    }
+
+    dns {
+      domain  = "domena.lab"
+      servers = ["10.20.0.10", "10.20.0.11"]
+    }
+
+    user_account {
+      username = "ansible"
+      keys     = [trimspace(file("${path.module}/keys/AnsibleVM.pub"))]
+    }
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}

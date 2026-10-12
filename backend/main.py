@@ -1,12 +1,24 @@
 import secrets
+from pathlib import Path
+from contextlib import asynccontextmanager
 
+import psycopg
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, HttpUrl
 
-app = FastAPI()
 
-links = {}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    with psycopg.connect(connect_timeout=5) as conn:
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS links "
+            "(code TEXT PRIMARY KEY, url TEXT NOT NULL)"
+        )
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 class LinkCreate(BaseModel):
@@ -15,7 +27,7 @@ class LinkCreate(BaseModel):
 
 @app.get("/")
 def home():
-    return {"message": "URL shortener działa"}
+    return FileResponse(Path(__file__).with_name("index.html"))
 
 
 @app.get("/health")
@@ -25,8 +37,13 @@ def health():
 
 @app.post("/api/links")
 def create_link(link: LinkCreate):
-    code = secrets.token_urlsafe(5)
-    links[code] = str(link.url)
+    code = secrets.token_urlsafe(8)
+
+    with psycopg.connect(connect_timeout=5) as conn:
+        conn.execute(
+            "INSERT INTO links (code, url) VALUES (%s, %s)",
+            (code, str(link.url)),
+        )
 
     return {
         "code": code,
@@ -36,7 +53,13 @@ def create_link(link: LinkCreate):
 
 @app.get("/r/{code}")
 def redirect(code: str):
-    if code not in links:
+    with psycopg.connect(connect_timeout=5) as conn:
+        row = conn.execute(
+            "SELECT url FROM links WHERE code = %s",
+            (code,),
+        ).fetchone()
+
+    if row is None:
         raise HTTPException(status_code=404, detail="Link nie istnieje")
 
-    return RedirectResponse(links[code], status_code=302)
+    return RedirectResponse(row[0], status_code=302)

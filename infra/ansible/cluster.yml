@@ -1,0 +1,48 @@
+- name: Utworzenie klastra
+  hosts: cp01
+  become: true
+
+  tasks:
+    - name: Konfiguracja
+      ansible.builtin.copy:
+        dest: /root/kubeadm.yml
+        mode: '0600'
+        content: |
+          apiVersion: kubeadm.k8s.io/v1beta4
+          kind: InitConfiguration
+          localAPIEndpoint:
+            advertiseAddress: 10.90.0.11
+          nodeRegistration:
+            criSocket: unix:///run/containerd/containerd.sock
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta4
+          kind: ClusterConfiguration
+          kubernetesVersion: v1.36.5
+          networking:
+            podSubnet: 10.244.0.0/16
+          ---
+          apiVersion: kubeproxy.config.k8s.io/v1alpha1
+          kind: KubeProxyConfiguration
+          mode: nftables
+
+    - name: Utworzenie klastra
+      ansible.builtin.command: kubeadm init --config /root/kubeadm.yml
+      args:
+        creates: /etc/kubernetes/admin.conf
+      no_log: true
+
+    - name: Token dla workerow
+      ansible.builtin.command: kubeadm token create --print-join-command --ttl 30m
+      register: join_command
+      no_log: true
+
+- name: Dolaczenie workerow
+  hosts: url_shortener:!cp01
+  become: true
+
+  tasks:
+    - name: Dolaczenie
+      ansible.builtin.command: "{{ hostvars['cp01'].join_command.stdout }} --cri-socket unix:///run/containerd/containerd.sock"
+      args:
+        creates: /etc/kubernetes/kubelet.conf
+      no_log: true

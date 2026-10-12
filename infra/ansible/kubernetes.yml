@@ -1,0 +1,41 @@
+- name: Instalacja Kubernetesa
+  hosts: url_shortener
+  become: true
+
+  tasks:
+    - name: Nazwa hosta
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Repozytorium
+      ansible.builtin.copy:
+        dest: /etc/yum.repos.d/kubernetes.repo
+        mode: '0644'
+        content: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://pkgs.k8s.io/core:/stable:/v1.36/rpm/
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://pkgs.k8s.io/core:/stable:/v1.36/rpm/repodata/repomd.xml.key
+          exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+
+    - name: Klucz repozytorium
+      ansible.builtin.rpm_key:
+        key: https://pkgs.k8s.io/core:/stable:/v1.36/rpm/repodata/repomd.xml.key
+        state: present
+
+    - name: Instalacja
+      ansible.builtin.dnf:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+        disable_excludes: kubernetes
+        install_weak_deps: false
+
+    - name: Wlaczenie kubelet
+      ansible.builtin.systemd_service:
+        name: kubelet
+        enabled: true

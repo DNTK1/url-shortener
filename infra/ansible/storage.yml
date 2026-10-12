@@ -1,0 +1,13 @@
+- name: Instalacja storage
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  tasks:
+    - name: Instalacja provisionera
+      ansible.builtin.command: kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/deploy/local-path-storage.yaml
+
+    - name: Oczekiwanie na provisioner
+      ansible.builtin.command: kubectl rollout status deployment/local-path-provisioner -n local-path-storage --timeout=180s
+      changed_when: false

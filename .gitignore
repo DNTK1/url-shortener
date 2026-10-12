@@ -32,9 +32,18 @@ __pycache__/
 *.log
 *.bak
 *.backup
+/infra/ansible/inventory.ini.tmp
 
 # Editors and OS
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan

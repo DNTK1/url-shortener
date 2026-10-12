@@ -1,0 +1,27 @@
+- name: Przygotowanie sieci
+  hosts: url_shortener
+  become: true
+
+  tasks:
+    - name: Sprawdzenie uslug
+      ansible.builtin.service_facts:
+
+    - name: Wylaczenie firewalld
+      ansible.builtin.systemd_service:
+        name: firewalld
+        enabled: false
+        state: stopped
+      when: "'firewalld.service' in ansible_facts.services"
+
+    - name: NetworkManager
+      ansible.builtin.copy:
+        dest: /etc/NetworkManager/conf.d/calico.conf
+        mode: '0644'
+        content: |
+          [keyfile]
+          unmanaged-devices=interface-name:cali*;interface-name:tunl*;interface-name:vxlan.calico;interface-name:vxlan-v6.calico
+      notify: Przeladowanie NetworkManager
+
+  handlers:
+    - name: Przeladowanie NetworkManager
+      ansible.builtin.command: nmcli general reload

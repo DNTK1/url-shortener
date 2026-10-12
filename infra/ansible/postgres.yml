@@ -1,0 +1,50 @@
+- name: Instalacja PostgreSQL
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  vars_prompt:
+    - name: postgres_password
+      prompt: Haslo PostgreSQL
+      private: true
+      confirm: true
+
+  tasks:
+    - name: Namespace
+      ansible.builtin.command: kubectl apply -f -
+      args:
+        stdin: |
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: url-shortener
+
+    - name: Dane logowania
+      ansible.builtin.command: kubectl apply -f -
+      args:
+        stdin: |
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: postgres
+            namespace: url-shortener
+          type: Opaque
+          stringData:
+            POSTGRES_DB: url_shortener
+            POSTGRES_USER: url_shortener
+            POSTGRES_PASSWORD: {{ postgres_password | to_json }}
+      no_log: true
+
+    - name: Manifest
+      ansible.builtin.copy:
+        src: ../../k8s/postgres.yml
+        dest: /root/postgres.yml
+        mode: '0644'
+
+    - name: Uruchomienie bazy
+      ansible.builtin.command: kubectl apply -f /root/postgres.yml
+
+    - name: Oczekiwanie na baze
+      ansible.builtin.command: kubectl rollout status statefulset/postgres -n url-shortener --timeout=300s
+      changed_when: false

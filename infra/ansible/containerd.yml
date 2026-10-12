@@ -1,0 +1,44 @@
+- name: Instalacja containerd
+  hosts: url_shortener
+  become: true
+
+  tasks:
+    - name: Repozytorium
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: '0644'
+
+    - name: Klucz repozytorium
+      ansible.builtin.rpm_key:
+        key: https://download.docker.com/linux/centos/gpg
+        state: present
+
+    - name: Instalacja
+      ansible.builtin.dnf:
+        name: containerd.io
+        state: present
+
+    - name: Domyslna konfiguracja
+      ansible.builtin.command: containerd config default
+      register: containerd_config
+      changed_when: false
+
+    - name: Zapis konfiguracji
+      ansible.builtin.copy:
+        dest: /etc/containerd/config.toml
+        mode: '0644'
+        content: "{{ containerd_config.stdout | replace('SystemdCgroup = false', 'SystemdCgroup = true') }}\n"
+      notify: Restart containerd
+
+    - name: Uruchomienie
+      ansible.builtin.systemd_service:
+        name: containerd
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Restart containerd
+      ansible.builtin.systemd_service:
+        name: containerd
+        state: restarted
