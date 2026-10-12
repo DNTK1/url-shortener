@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/DNTK1/url-shortener.git
-    targetRevision: feat/proxmox-vms
+    targetRevision: main
     path: k8s
   destination:
     server: https://kubernetes.default.svc
