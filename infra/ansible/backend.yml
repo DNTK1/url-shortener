@@ -1,0 +1,19 @@
+- name: Wdrozenie backendu
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  tasks:
+    - name: Manifest
+      ansible.builtin.copy:
+        src: ../../k8s/backend.yml
+        dest: /root/backend.yml
+        mode: '0644'
+
+    - name: Wdrozenie
+      ansible.builtin.command: kubectl apply -f /root/backend.yml
+
+    - name: Oczekiwanie na backend
+      ansible.builtin.command: kubectl rollout status deployment/backend -n url-shortener --timeout=180s
+      changed_when: false
