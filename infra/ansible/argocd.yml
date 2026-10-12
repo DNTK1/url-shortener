@@ -1,0 +1,26 @@
+- name: Argo CD
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  tasks:
+    - name: Namespace
+      ansible.builtin.command: kubectl apply -f -
+      args:
+        stdin: |
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: argocd
+
+    - name: Instalacja
+      ansible.builtin.command: kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.5/manifests/install.yaml
+
+    - name: Deploymenty
+      ansible.builtin.command: kubectl rollout status deployment -n argocd --timeout=600s
+      changed_when: false
+
+    - name: Kontroler
+      ansible.builtin.command: kubectl rollout status statefulset/argocd-application-controller -n argocd --timeout=600s
+      changed_when: false

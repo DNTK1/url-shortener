@@ -1,0 +1,15 @@
+- name: GitOps
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  tasks:
+    - name: Manifest
+      ansible.builtin.copy:
+        src: ../argocd/application.yml
+        dest: /root/application.yml
+        mode: '0644'
+
+    - name: Aplikacja
+      ansible.builtin.command: kubectl apply -f /root/application.yml
