@@ -1,0 +1,57 @@
+- name: MetalLB
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  tasks:
+    - name: Namespace
+      ansible.builtin.command: kubectl apply -f -
+      args:
+        stdin: |
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: metallb-system
+            labels:
+              pod-security.kubernetes.io/enforce: privileged
+              pod-security.kubernetes.io/audit: privileged
+              pod-security.kubernetes.io/warn: privileged
+
+    - name: Repo
+      ansible.builtin.command: /usr/local/bin/helm repo add metallb https://metallb.github.io/metallb
+
+    - name: Instalacja
+      ansible.builtin.command: >-
+        /usr/local/bin/helm upgrade --install metallb metallb/metallb
+        --version 0.16.1
+        --namespace metallb-system
+        --set speaker.frr.enabled=false
+        --set frrk8s.enabled=false
+        --wait --timeout 5m
+
+    - name: Adres
+      ansible.builtin.command: kubectl apply -f -
+      args:
+        stdin: |
+          apiVersion: metallb.io/v1beta1
+          kind: IPAddressPool
+          metadata:
+            name: lan-pool
+            namespace: metallb-system
+          spec:
+            addresses:
+              - 10.90.0.30-10.90.0.30
+          ---
+          apiVersion: metallb.io/v1beta1
+          kind: L2Advertisement
+          metadata:
+            name: lan-l2
+            namespace: metallb-system
+          spec:
+            ipAddressPools:
+              - lan-pool
+      register: metallb_config
+      retries: 5
+      delay: 5
+      until: metallb_config.rc == 0

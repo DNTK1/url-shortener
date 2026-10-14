@@ -1,0 +1,45 @@
+- name: NGINX
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  tasks:
+    - name: Repo
+      ansible.builtin.command: /usr/local/bin/helm repo add nginx-stable https://helm.nginx.com/stable
+
+    - name: Ustawienia
+      ansible.builtin.copy:
+        dest: /root/nginx-values.yml
+        mode: '0644'
+        content: |
+          controller:
+            replicaCount: 1
+            ingressClass:
+              name: nginx
+              create: true
+              setAsDefaultIngress: false
+            enableCustomResources: false
+            enableSnippets: false
+            service:
+              type: LoadBalancer
+              externalTrafficPolicy: Cluster
+              annotations:
+                metallb.io/address-pool: lan-pool
+                metallb.io/loadBalancerIPs: "10.90.0.30"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+
+    - name: Instalacja
+      ansible.builtin.command: >-
+        /usr/local/bin/helm upgrade --install nginx nginx-stable/nginx-ingress
+        --version 2.7.3
+        --namespace nginx-ingress
+        --create-namespace
+        --skip-crds
+        --values /root/nginx-values.yml
+        --wait --timeout 5m

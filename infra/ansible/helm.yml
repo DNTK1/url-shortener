@@ -1,0 +1,30 @@
+- name: Helm
+  hosts: cp01
+  become: true
+
+  tasks:
+    - name: Pobranie
+      ansible.builtin.get_url:
+        url: https://get.helm.sh/helm-v4.3.0-linux-amd64.tar.gz
+        dest: /tmp/helm.tar.gz
+        checksum: sha256:86584a54def73570558f66f5111cc53dfed56689637ae32c1201205d494f54fb
+        mode: '0644'
+
+    - name: Katalog
+      ansible.builtin.file:
+        path: /tmp/helm
+        state: directory
+        mode: '0755'
+
+    - name: Rozpakowanie
+      ansible.builtin.unarchive:
+        src: /tmp/helm.tar.gz
+        dest: /tmp/helm
+        remote_src: true
+
+    - name: Instalacja
+      ansible.builtin.copy:
+        src: /tmp/helm/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        remote_src: true
+        mode: '0755'

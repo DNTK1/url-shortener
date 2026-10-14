@@ -5,6 +5,9 @@
 - import_playbook: network.yml
 - import_playbook: cluster.yml
 - import_playbook: calico.yml
+- import_playbook: helm.yml
+- import_playbook: metallb.yml
+- import_playbook: nginx.yml
 - import_playbook: storage.yml
 - import_playbook: postgres.yml
 - import_playbook: argocd.yml
