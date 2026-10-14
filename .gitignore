@@ -47,3 +47,6 @@ Thumbs.db
 *.tfvars
 *.tfvars.json
 *.tfplan
+
+/infra/ansible/keys/
+/infra/terraform/keys/
