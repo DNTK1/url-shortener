@@ -1,0 +1,24 @@
+- name: TLS
+  hosts: cp01
+  become: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+  vars:
+    tls_dir: "{{ lookup('env', 'HOME') }}/.config/url-shortener/tls"
+
+  tasks:
+    - name: Certyfikat
+      ansible.builtin.command: kubectl apply -f -
+      args:
+        stdin: |
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: url-shortener-tls
+            namespace: url-shortener
+          type: kubernetes.io/tls
+          stringData:
+            tls.crt: {{ lookup('file', tls_dir + '/fullchain.crt') | to_json }}
+            tls.key: {{ lookup('file', tls_dir + '/short.key') | to_json }}
+      no_log: true

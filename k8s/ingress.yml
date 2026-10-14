@@ -3,8 +3,14 @@ kind: Ingress
 metadata:
   name: url-shortener
   namespace: url-shortener
+  annotations:
+    nginx.org/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - short.domena.lab
+      secretName: url-shortener-tls
   rules:
     - host: short.domena.lab
       http:
