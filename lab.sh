@@ -18,6 +18,12 @@ configure_vm() {
 
   python3 scripts/generate_inventory.py
 
+  while read -r vm_name vm_address vm_options; do
+    if [[ "$vm_address" == ansible_host=* ]]; then
+      ssh -n -i "$ANSIBLE_SSH_KEY"         -o IdentitiesOnly=yes         -o StrictHostKeyChecking=ask         -o ConnectTimeout=10         "ansible@${vm_address#ansible_host=}" true
+    fi
+  done < infra/ansible/inventory.ini
+
   ansible-playbook \
     -i infra/ansible/inventory.ini \
     infra/ansible/setup.yml \
