@@ -48,3 +48,19 @@
     - name: Oczekiwanie na baze
       ansible.builtin.command: kubectl rollout status statefulset/postgres -n url-shortener --timeout=300s
       changed_when: false
+
+    - name: Dysk
+      ansible.builtin.command: kubectl get pvc postgres-data -n url-shortener -o jsonpath={.spec.volumeName}
+      register: postgres_volume
+      changed_when: false
+
+    - name: Retain
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - patch
+          - pv
+          - "{{ postgres_volume.stdout }}"
+          - --type=merge
+          - -p
+          - '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
