@@ -8,7 +8,6 @@
 *.p12
 *.pfx
 *.kubeconfig
-vault.yml
 vault-password*
 *.password
 *.token
@@ -25,7 +24,7 @@ htmlcov/
 .ruff_cache/
 __pycache__/
 *.py[cod]
-*.pyc
+*.snap
 
 # Local files and backups
 /linux/deploy-rocky.conf
@@ -47,6 +46,3 @@ Thumbs.db
 *.tfvars
 *.tfvars.json
 *.tfplan
-
-/infra/ansible/keys/
-/infra/terraform/keys/
